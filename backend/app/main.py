@@ -5,6 +5,7 @@ from backend.app.api.router import api_router
 from backend.app.api.tickets import router as service_desk_router
 from backend.app.core.config import get_settings
 from backend.app.web import router as web_router
+from backend.app.web_desk import router as web_desk_router
 
 settings = get_settings()
 
@@ -26,6 +27,7 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api")
 app.include_router(service_desk_router, prefix="/api")
 app.include_router(web_router)
+app.include_router(web_desk_router)
 
 
 @app.get("/")
