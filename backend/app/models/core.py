@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.db.base import Base
@@ -69,6 +69,22 @@ class Venue(Base, TimestampMixin):
 
     client: Mapped[Client] = relationship(back_populates="venues")
     tickets: Mapped[list["Ticket"]] = relationship(back_populates="venue")
+    passport_sections: Mapped[list["ObjectPassportSection"]] = relationship(back_populates="venue")
+
+
+class ObjectPassportSection(Base, TimestampMixin):
+    __tablename__ = "object_passport_sections"
+    __table_args__ = (UniqueConstraint("venue_id", "module_key", name="uq_object_passport_section_venue_module"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    venue_id: Mapped[int] = mapped_column(ForeignKey("venues.id"), index=True)
+    module_key: Mapped[str] = mapped_column(String(64), index=True)
+    title: Mapped[str] = mapped_column(String(128))
+    status: Mapped[str] = mapped_column(String(32), default="draft", index=True)
+    summary: Mapped[Optional[str]] = mapped_column(Text)
+    notes: Mapped[Optional[str]] = mapped_column(Text)
+
+    venue: Mapped[Venue] = relationship(back_populates="passport_sections")
 
 
 class Ticket(Base, TimestampMixin):
