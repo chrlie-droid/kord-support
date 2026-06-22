@@ -39,6 +39,22 @@ def desk_home(db: Session = Depends(get_db)):
     return layout("Service Desk", body)
 
 
+@router.get("/desk/tickets/{ticket_id}", response_class=HTMLResponse)
+def desk_ticket(ticket_id: int, db: Session = Depends(get_db)):
+    ticket = db.get(Ticket, ticket_id)
+    if ticket is None:
+        return layout("Заявка не найдена", "<section class='card'><h2>Заявка не найдена</h2></section>")
+    venue = db.get(Venue, ticket.venue_id)
+    comments = db.scalars(select(TicketComment).where(TicketComment.ticket_id == ticket.id).order_by(TicketComment.created_at)).all()
+    comment_rows = "".join(f"<div class='card'><b>{c.author_name}</b><p>{c.body}</p><span class='muted'>{'внутренний' if c.is_internal else 'публичный'}</span></div>" for c in comments) or "<p class='muted'>Комментариев пока нет</p>"
+    status_options = "".join(f"<option value='{s.value}' {'selected' if s == ticket.status else ''}>{s.value}</option>" for s in TicketStatus)
+    body = f"""
+<section class="card"><h2>Заявка #{ticket.id}: {ticket.title}</h2><p><b>Заведение:</b> {venue.name if venue else ''}</p><p><b>Статус:</b> <span class="badge">{ticket.status}</span></p><p><b>Приоритет:</b> {ticket.priority}</p><p>{ticket.description}</p><form method="post" action="/desk/tickets/{ticket.id}/status"><label>Изменить статус</label><select name="status">{status_options}</select><button>Сохранить статус</button></form></section>
+<section class="card"><h2>Добавить комментарий</h2><form method="post" action="/desk/tickets/{ticket.id}/comments"><label>Автор</label><input name="author_name" value="Инженер" required><label>Комментарий</label><textarea name="body" required></textarea><button>Добавить</button></form></section><h2>Комментарии</h2>{comment_rows}
+"""
+    return layout(f"Заявка #{ticket.id}", body)
+
+
 @router.post("/desk/tickets")
 def web_create_ticket(venue_id: int = Form(...), title: str = Form(...), description: str = Form(...), priority: TicketPriority = Form(TicketPriority.NORMAL), db: Session = Depends(get_db)):
     ticket = Ticket(venue_id=venue_id, title=title, description=description, priority=priority)
@@ -46,3 +62,19 @@ def web_create_ticket(venue_id: int = Form(...), title: str = Form(...), descrip
     db.commit()
     db.refresh(ticket)
     return RedirectResponse(f"/desk/tickets/{ticket.id}", status_code=303)
+
+
+@router.post("/desk/tickets/{ticket_id}/comments")
+def web_create_ticket_comment(ticket_id: int, author_name: str = Form(...), body: str = Form(...), db: Session = Depends(get_db)):
+    db.add(TicketComment(ticket_id=ticket_id, author_name=author_name, body=body, is_internal=False))
+    db.commit()
+    return RedirectResponse(f"/desk/tickets/{ticket_id}", status_code=303)
+
+
+@router.post("/desk/tickets/{ticket_id}/status")
+def web_update_ticket_status(ticket_id: int, status: TicketStatus = Form(...), db: Session = Depends(get_db)):
+    ticket = db.get(Ticket, ticket_id)
+    if ticket is not None:
+        ticket.status = status
+        db.commit()
+    return RedirectResponse(f"/desk/tickets/{ticket_id}", status_code=303)
