@@ -77,11 +77,11 @@ export default async function ClientDetailPage({ params }: PageProps) {
         <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Заведения</h2><span className="text-sm text-slate-500">{venues.length}</span></div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {venues.length === 0 ? <p className="text-sm text-slate-500">Заведений пока нет.</p> : venues.map((venue) => (
-            <div key={venue.id} className="rounded-xl border p-3">
+            <Link key={venue.id} href={`/objects/${venue.id}`} className="block rounded-xl border p-3 transition hover:bg-slate-50">
               <div className="font-medium">{venue.name}</div>
               <div className="mt-1 text-sm text-slate-500">{venue.address || 'адрес не указан'}</div>
               <div className="mt-1 text-xs text-slate-400">{venue.venue_type}</div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
