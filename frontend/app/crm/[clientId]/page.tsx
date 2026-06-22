@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { Shell } from '@/components/shell';
 import { getClient, getClientContacts, getClientVenues } from '@/lib/api';
+import { createVenueAction } from './actions';
 
 type PageProps = {
   params: Promise<{ clientId: string }>;
@@ -17,6 +18,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
   }
 
   const [client, venues, contacts] = await Promise.all([getClient(id), getClientVenues(id), getClientContacts(id)]);
+  const createVenue = createVenueAction.bind(null, id);
 
   return (
     <Shell>
@@ -32,22 +34,10 @@ export default async function ClientDetailPage({ params }: PageProps) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border bg-white p-5 shadow-sm">
-          <div className="text-sm text-slate-500">Заведения</div>
-          <div className="mt-2 text-3xl font-bold">{venues.length}</div>
-        </div>
-        <div className="rounded-2xl border bg-white p-5 shadow-sm">
-          <div className="text-sm text-slate-500">Контакты</div>
-          <div className="mt-2 text-3xl font-bold">{contacts.length}</div>
-        </div>
-        <div className="rounded-2xl border bg-white p-5 shadow-sm">
-          <div className="text-sm text-slate-500">Заявки</div>
-          <div className="mt-2 text-3xl font-bold">0</div>
-        </div>
-        <div className="rounded-2xl border bg-white p-5 shadow-sm">
-          <div className="text-sm text-slate-500">Статус</div>
-          <div className="mt-2 text-lg font-semibold">Активный</div>
-        </div>
+        <div className="rounded-2xl border bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Заведения</div><div className="mt-2 text-3xl font-bold">{venues.length}</div></div>
+        <div className="rounded-2xl border bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Контакты</div><div className="mt-2 text-3xl font-bold">{contacts.length}</div></div>
+        <div className="rounded-2xl border bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Заявки</div><div className="mt-2 text-3xl font-bold">0</div></div>
+        <div className="rounded-2xl border bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Статус</div><div className="mt-2 text-lg font-semibold">Активный</div></div>
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -63,42 +53,49 @@ export default async function ClientDetailPage({ params }: PageProps) {
         </section>
 
         <section className="rounded-2xl border bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Заведения</h2>
-            <span className="text-sm text-slate-500">{venues.length}</span>
-          </div>
-          <div className="mt-4 space-y-3">
-            {venues.length === 0 ? (
-              <p className="text-sm text-slate-500">Заведений пока нет. Следующий шаг — добавим создание заведения из карточки клиента.</p>
-            ) : (
-              venues.map((venue) => (
-                <div key={venue.id} className="rounded-xl border p-3">
-                  <div className="font-medium">{venue.name}</div>
-                  <div className="mt-1 text-sm text-slate-500">{venue.address || 'адрес не указан'}</div>
-                </div>
-              ))
-            )}
-          </div>
+          <h2 className="text-lg font-semibold">Новое заведение</h2>
+          <form action={createVenue} className="mt-4 grid gap-3">
+            <input name="name" required placeholder="Название заведения" className="rounded-xl border px-3 py-2" />
+            <select name="venue_type" className="rounded-xl border px-3 py-2" defaultValue="other">
+              <option value="bar">Бар</option>
+              <option value="cafe">Кафе</option>
+              <option value="restaurant">Ресторан</option>
+              <option value="dark_kitchen">Dark Kitchen</option>
+              <option value="food_truck">Фудтрак</option>
+              <option value="other">Другое</option>
+            </select>
+            <input name="address" placeholder="Адрес" className="rounded-xl border px-3 py-2" />
+            <input name="phone" placeholder="Телефон" className="rounded-xl border px-3 py-2" />
+            <input name="work_hours" placeholder="Режим работы" className="rounded-xl border px-3 py-2" />
+            <textarea name="notes" placeholder="Заметки" className="rounded-xl border px-3 py-2" />
+            <button className="rounded-xl bg-slate-950 px-4 py-2 text-white md:w-fit">Создать заведение</button>
+          </form>
         </section>
       </div>
 
       <section className="mt-4 rounded-2xl border bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Контакты</h2>
-          <span className="text-sm text-slate-500">{contacts.length}</span>
-        </div>
+        <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Заведения</h2><span className="text-sm text-slate-500">{venues.length}</span></div>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {contacts.length === 0 ? (
-            <p className="text-sm text-slate-500">Контактов пока нет.</p>
-          ) : (
-            contacts.map((contact) => (
-              <div key={contact.id} className="rounded-xl border p-3">
-                <div className="font-medium">{contact.full_name}</div>
-                <div className="mt-1 text-sm text-slate-500">{contact.role || 'роль не указана'}</div>
-                <div className="mt-2 text-sm text-slate-600">{contact.phone || contact.email || 'контакты не указаны'}</div>
-              </div>
-            ))
-          )}
+          {venues.length === 0 ? <p className="text-sm text-slate-500">Заведений пока нет.</p> : venues.map((venue) => (
+            <div key={venue.id} className="rounded-xl border p-3">
+              <div className="font-medium">{venue.name}</div>
+              <div className="mt-1 text-sm text-slate-500">{venue.address || 'адрес не указан'}</div>
+              <div className="mt-1 text-xs text-slate-400">{venue.venue_type}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-4 rounded-2xl border bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Контакты</h2><span className="text-sm text-slate-500">{contacts.length}</span></div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {contacts.length === 0 ? <p className="text-sm text-slate-500">Контактов пока нет.</p> : contacts.map((contact) => (
+            <div key={contact.id} className="rounded-xl border p-3">
+              <div className="font-medium">{contact.full_name}</div>
+              <div className="mt-1 text-sm text-slate-500">{contact.role || 'роль не указана'}</div>
+              <div className="mt-2 text-sm text-slate-600">{contact.phone || contact.email || 'контакты не указаны'}</div>
+            </div>
+          ))}
         </div>
       </section>
     </Shell>
