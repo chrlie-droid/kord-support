@@ -22,6 +22,21 @@ class TicketPriority(StrEnum):
     CRITICAL = "critical"
 
 
+class TicketCategory(StrEnum):
+    VENUE_DOWN = "venue_down"
+    CASH_REGISTER = "cash_register"
+    PAYMENT = "payment"
+    PRINTER = "printer"
+    IIKO = "iiko"
+    EGAIS = "egais"
+    CHESTNY_ZNAK = "chestny_znak"
+    EQUIPMENT = "equipment"
+    SETTINGS = "settings"
+    CONSULTATION = "consultation"
+    DOCUMENTS = "documents"
+    OTHER = "other"
+
+
 class VenueType(StrEnum):
     BAR = "bar"
     CAFE = "cafe"
