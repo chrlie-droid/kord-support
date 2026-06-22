@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.4
+
+- Added venue creation from client detail page.
+- Added venue list cards on client detail page.
+- Added venue type, address, phone and work hours fields.
+
 ## 0.4.3
 
 - Added CRM client detail page.
