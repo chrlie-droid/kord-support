@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0
+
+- Repositioned Kord Support around the client portal first.
+- Added dedicated client portal shell without engineer navigation.
+- Added client home page.
+- Added client-facing ticket categories.
+- Added help category selector.
+- Added request draft page after category selection.
+- Added placeholders for My Requests, My Objects and Knowledge Base.
+- Documented strict rule: one account sees only own tickets.
+
 ## 0.4.5
 
 - Added object detail page for venues.
