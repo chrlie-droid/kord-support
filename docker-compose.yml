@@ -5,7 +5,7 @@ services:
     env_file:
       - .env
     ports:
-      - "8085:8085"
+      - "127.0.0.1:8085:8085"
     depends_on:
       db:
         condition: service_healthy
@@ -22,7 +22,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-kord_support}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kord_support_password}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
