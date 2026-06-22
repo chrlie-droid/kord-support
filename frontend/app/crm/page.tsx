@@ -1,5 +1,6 @@
 import { Shell } from '@/components/shell';
 import { getClients, getContacts, getVenues } from '@/lib/api';
+import { createClientAction } from './actions';
 
 export default async function CrmPage() {
   const [clients, venues, contacts] = await Promise.all([getClients(), getVenues(), getContacts()]);
@@ -27,10 +28,22 @@ export default async function CrmPage() {
         </div>
       </div>
 
+      <section className="mb-6 rounded-2xl border bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-semibold">Новый клиент</h2>
+        <form action={createClientAction} className="mt-4 grid gap-3 md:grid-cols-2">
+          <input name="name" required placeholder="Название клиента" className="rounded-xl border px-3 py-2" />
+          <input name="inn" placeholder="ИНН" className="rounded-xl border px-3 py-2" />
+          <input name="contract_number" placeholder="Номер договора" className="rounded-xl border px-3 py-2" />
+          <input name="support_plan" placeholder="Тариф сопровождения" className="rounded-xl border px-3 py-2" />
+          <textarea name="notes" placeholder="Заметки" className="rounded-xl border px-3 py-2 md:col-span-2" />
+          <button className="rounded-xl bg-slate-950 px-4 py-2 text-white md:w-fit">Создать клиента</button>
+        </form>
+      </section>
+
       {clients.length === 0 ? (
         <section className="rounded-2xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">Клиентов пока нет</h2>
-          <p className="mt-2 text-sm text-slate-600">Следующим шагом добавим форму создания клиента прямо в новый интерфейс.</p>
+          <p className="mt-2 text-sm text-slate-600">Создай первого клиента через форму выше.</p>
         </section>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
