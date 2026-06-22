@@ -3,6 +3,8 @@ __pycache__/
 *.sqlite3
 *.db
 .env
+.env.*
+!.env.example
 .venv/
 venv/
 .idea/
@@ -14,3 +16,17 @@ venv/
 data/
 uploads/
 logs/
+backups/
+*.bak
+*.dump
+*.sql
+*.log
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+node_modules/
+.next/
