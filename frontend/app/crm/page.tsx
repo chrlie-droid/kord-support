@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { Shell } from '@/components/shell';
 import { getClients, getContacts, getVenues } from '@/lib/api';
 import { createClientAction } from './actions';
@@ -48,7 +50,7 @@ export default async function CrmPage() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {clients.map((client) => (
-            <article key={client.id} className="rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md">
+            <Link key={client.id} href={`/crm/${client.id}`} className="block rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-semibold">{client.name}</h2>
@@ -73,7 +75,7 @@ export default async function CrmPage() {
               </div>
 
               <div className="mt-4 text-sm text-slate-600">Договор: {client.contract_number || 'не указан'}</div>
-            </article>
+            </Link>
           ))}
         </div>
       )}
