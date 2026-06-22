@@ -2,20 +2,27 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { Shell } from '@/components/shell';
-import { getClient, getVenue } from '@/lib/api';
+import { getClient, getPassportSections, getVenue } from '@/lib/api';
 
 type PageProps = {
   params: Promise<{ venueId: string }>;
 };
 
 const modules = [
-  { title: 'iiko', description: 'Версия, лицензии, Front, Office, сервер и обновления.' },
-  { title: 'Оборудование', description: 'Кассы, ФР, принтеры, терминалы, сканеры и весы.' },
-  { title: 'ЕГАИС', description: 'УТМ, RSA, FSRAR ID, порты и последняя синхронизация.' },
-  { title: 'Честный знак', description: 'ТС ПиОТ, GTIN, марки, режимы и особенности объекта.' },
-  { title: 'Сеть', description: 'Роутер, провайдер, VPN, Wi-Fi, белый IP и удаленный доступ.' },
-  { title: 'Документы', description: 'Договоры, счета, акты, фото оборудования и файлы.' },
+  { key: 'iiko', title: 'iiko', description: 'Версия, лицензии, Front, Office, сервер и обновления.' },
+  { key: 'equipment', title: 'Оборудование', description: 'Кассы, ФР, принтеры, терминалы, сканеры и весы.' },
+  { key: 'egais', title: 'ЕГАИС', description: 'УТМ, RSA, FSRAR ID, порты и последняя синхронизация.' },
+  { key: 'marking', title: 'Честный знак', description: 'ТС ПиОТ, GTIN, марки, режимы и особенности объекта.' },
+  { key: 'network', title: 'Сеть', description: 'Роутер, провайдер, VPN, Wi-Fi, белый IP и удаленный доступ.' },
+  { key: 'documents', title: 'Документы', description: 'Договоры, счета, акты, фото оборудования и файлы.' },
 ];
+
+function statusLabel(status: string) {
+  if (status === 'ok') return 'заполнено';
+  if (status === 'needs_attention') return 'требует внимания';
+  if (status === 'missing') return 'нет данных';
+  return 'черновик';
+}
 
 export default async function ObjectDetailPage({ params }: PageProps) {
   const { venueId } = await params;
@@ -25,8 +32,10 @@ export default async function ObjectDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const venue = await getVenue(id);
+  const [venue, sections] = await Promise.all([getVenue(id), getPassportSections(id)]);
   const client = await getClient(venue.client_id);
+  const sectionsByKey = new Map(sections.map((section) => [section.module_key, section]));
+  const filledCount = sections.filter((section) => section.status === 'ok').length;
 
   return (
     <Shell>
@@ -45,7 +54,7 @@ export default async function ObjectDetailPage({ params }: PageProps) {
         <div className="rounded-2xl border bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Статус</div><div className="mt-2 text-lg font-semibold">В работе</div></div>
         <div className="rounded-2xl border bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Заявки</div><div className="mt-2 text-3xl font-bold">0</div></div>
         <div className="rounded-2xl border bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Мониторинг</div><div className="mt-2 text-lg font-semibold">Не подключен</div></div>
-        <div className="rounded-2xl border bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Паспорт</div><div className="mt-2 text-lg font-semibold">Черновик</div></div>
+        <div className="rounded-2xl border bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Паспорт</div><div className="mt-2 text-lg font-semibold">{filledCount}/{modules.length}</div></div>
       </div>
 
       <section className="mt-6 rounded-2xl border bg-white p-5 shadow-sm">
@@ -62,13 +71,19 @@ export default async function ObjectDetailPage({ params }: PageProps) {
       <section className="mt-6">
         <h2 className="mb-4 text-lg font-semibold">Разделы паспорта объекта</h2>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {modules.map((module) => (
-            <div key={module.title} className="rounded-2xl border bg-white p-5 shadow-sm">
-              <div className="text-lg font-semibold">{module.title}</div>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{module.description}</p>
-              <div className="mt-4 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">будет в 0.5</div>
-            </div>
-          ))}
+          {modules.map((module) => {
+            const section = sectionsByKey.get(module.key);
+            return (
+              <div key={module.key} className="rounded-2xl border bg-white p-5 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="text-lg font-semibold">{module.title}</div>
+                  <div className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">{statusLabel(section?.status || 'draft')}</div>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{section?.summary || module.description}</p>
+                {section?.notes ? <p className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{section.notes}</p> : null}
+              </div>
+            );
+          })}
         </div>
       </section>
     </Shell>
