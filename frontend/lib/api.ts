@@ -50,10 +50,22 @@ export async function getClients(): Promise<Client[]> {
   return apiGet<Client[]>('/crm/clients');
 }
 
+export async function getClient(clientId: number): Promise<Client> {
+  return apiGet<Client>(`/crm/clients/${clientId}`);
+}
+
 export async function getVenues(): Promise<Venue[]> {
   return apiGet<Venue[]>('/crm/venues');
 }
 
+export async function getClientVenues(clientId: number): Promise<Venue[]> {
+  return apiGet<Venue[]>(`/crm/venues?client_id=${clientId}`);
+}
+
 export async function getContacts(): Promise<Contact[]> {
   return apiGet<Contact[]>('/crm/contacts');
+}
+
+export async function getClientContacts(clientId: number): Promise<Contact[]> {
+  return apiGet<Contact[]>(`/crm/contacts?client_id=${clientId}`);
 }
