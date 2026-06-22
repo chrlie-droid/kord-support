@@ -15,6 +15,7 @@ RUN pip install -r /app/backend/requirements.txt
 
 COPY backend /app/backend
 COPY alembic /app/alembic
+COPY scripts /app/scripts
 COPY alembic.ini /app/alembic.ini
 
 EXPOSE 8085
