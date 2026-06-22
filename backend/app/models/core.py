@@ -37,6 +37,22 @@ class Client(Base, TimestampMixin):
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
     venues: Mapped[list["Venue"]] = relationship(back_populates="client")
+    contacts: Mapped[list["ContactPerson"]] = relationship(back_populates="client")
+
+
+class ContactPerson(Base, TimestampMixin):
+    __tablename__ = "contact_persons"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    client_id: Mapped[int] = mapped_column(ForeignKey("clients.id"), index=True)
+    full_name: Mapped[str] = mapped_column(String(255))
+    role: Mapped[Optional[str]] = mapped_column(String(128))
+    phone: Mapped[Optional[str]] = mapped_column(String(64), index=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+    telegram: Mapped[Optional[str]] = mapped_column(String(128))
+    notes: Mapped[Optional[str]] = mapped_column(Text)
+
+    client: Mapped[Client] = relationship(back_populates="contacts")
 
 
 class Venue(Base, TimestampMixin):
