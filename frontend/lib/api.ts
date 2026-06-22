@@ -31,6 +31,16 @@ export type Contact = {
   notes?: string | null;
 };
 
+export type PassportSection = {
+  id: number;
+  venue_id: number;
+  module_key: string;
+  title: string;
+  status: string;
+  summary?: string | null;
+  notes?: string | null;
+};
+
 const API_BASE_URL = process.env.API_BASE_URL || 'http://app:8085/api';
 
 export async function apiGet<T>(path: string): Promise<T> {
@@ -72,4 +82,8 @@ export async function getContacts(): Promise<Contact[]> {
 
 export async function getClientContacts(clientId: number): Promise<Contact[]> {
   return apiGet<Contact[]>(`/crm/contacts?client_id=${clientId}`);
+}
+
+export async function getPassportSections(venueId: number): Promise<PassportSection[]> {
+  return apiGet<PassportSection[]>(`/passport/venues/${venueId}/sections`);
 }
