@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    container_name: kord-support-app
+    env_file:
+      - .env
+    ports:
+      - "8085:8085"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: kord-support-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kord_support}
+      POSTGRES_USER: ${POSTGRES_USER:-kord_support}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kord_support_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kord_support} -d ${POSTGRES_DB:-kord_support}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
