@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.3
+
+- Added CRM client detail page.
+- Linked CRM client cards to detail pages.
+- Added client venues and contacts sections.
+
 ## 0.4.2
 
 - Added CRM client creation form in the new Next.js interface.
