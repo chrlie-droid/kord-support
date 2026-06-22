@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.5
+
+- Added object detail page for venues.
+- Linked venues from client detail page to object cards.
+- Added first technical passport module placeholders.
+
 ## 0.4.4
 
 - Added venue creation from client detail page.
