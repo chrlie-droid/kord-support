@@ -3,13 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.api.router import api_router
 from backend.app.core.config import get_settings
+from backend.app.web import router as web_router
 
 settings = get_settings()
 
 app = FastAPI(
     title=settings.app_name,
     debug=settings.app_debug,
-    version="0.1.0",
+    version="0.2.0",
     description="Service Desk / CRM / ERP platform for an iiko integrator.",
 )
 
@@ -22,8 +23,9 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api")
+app.include_router(web_router)
 
 
 @app.get("/")
 def root() -> dict[str, str]:
-    return {"service": settings.app_name, "status": "running", "docs": "/docs", "health": "/api/health"}
+    return {"service": settings.app_name, "status": "running", "crm": "/crm", "docs": "/docs", "health": "/api/health"}
