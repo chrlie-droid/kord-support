@@ -58,6 +58,10 @@ export async function getVenues(): Promise<Venue[]> {
   return apiGet<Venue[]>('/crm/venues');
 }
 
+export async function getVenue(venueId: number): Promise<Venue> {
+  return apiGet<Venue>(`/crm/venues/${venueId}`);
+}
+
 export async function getClientVenues(clientId: number): Promise<Venue[]> {
   return apiGet<Venue[]>(`/crm/venues?client_id=${clientId}`);
 }
