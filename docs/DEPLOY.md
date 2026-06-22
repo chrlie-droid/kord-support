@@ -1,24 +1,26 @@
 # Deploy to VDS
 
-Target server example:
-
-```text
-188.225.38.81
-support.koard.ru
-```
+This document uses placeholders. Do not commit real production IP addresses, domains, passwords, tokens or private paths.
 
 ## 1. DNS
 
 Create an A record:
 
 ```text
-support.koard.ru  A  188.225.38.81
+APP_DOMAIN  A  SERVER_PUBLIC_IP
 ```
 
 Optional dev subdomain:
 
 ```text
-dev.support.koard.ru  A  188.225.38.81
+DEV_APP_DOMAIN  A  SERVER_PUBLIC_IP
+```
+
+Example placeholders:
+
+```text
+support.example.com      A  203.0.113.10
+dev.support.example.com  A  203.0.113.10
 ```
 
 ## 2. Server packages
@@ -74,13 +76,19 @@ POSTGRES_PASSWORD=strong-db-password
 ```bash
 docker compose up -d --build
 docker compose exec app alembic upgrade head
-docker compose exec app python -m scripts.seed_admin
+docker compose exec app sh -lc 'cd /app && PYTHONPATH=/app python /app/scripts/seed_admin.py'
 ```
 
-Check:
+Check backend locally:
 
 ```bash
 curl http://127.0.0.1:8085/api/health
+```
+
+Check frontend locally:
+
+```bash
+curl http://127.0.0.1:3000
 ```
 
 ## 6. Domain and HTTPS with Caddy
@@ -95,15 +103,24 @@ apt update
 apt install -y caddy
 ```
 
-Create config:
+Create config. Replace `APP_DOMAIN` and `CLEAR_DOMAIN` with real domains only on the server, not in committed documentation:
 
 ```bash
 cat > /etc/caddy/Caddyfile <<'EOF'
-support.koard.ru {
-    reverse_proxy 127.0.0.1:8085
+APP_DOMAIN {
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8085
+    }
+
+    reverse_proxy 127.0.0.1:3000
+}
+
+CLEAR_DOMAIN {
+    reverse_proxy 127.0.0.1:8001
 }
 EOF
 
+caddy validate --config /etc/caddy/Caddyfile
 systemctl reload caddy
 systemctl status caddy --no-pager
 ```
@@ -111,9 +128,9 @@ systemctl status caddy --no-pager
 Open:
 
 ```text
-https://support.koard.ru
-https://support.koard.ru/crm
-https://support.koard.ru/docs
+https://APP_DOMAIN
+https://APP_DOMAIN/crm
+https://APP_DOMAIN/api/health
 ```
 
 ## 7. Update deployment
