@@ -10,13 +10,22 @@ export async function createTicketFromWizardAction(formData: FormData) {
   const objectName = String(formData.get('object_name') || '').trim();
   const answer = String(formData.get('answer') || '').trim();
   const message = String(formData.get('message') || '').trim();
+  const authorName = String(formData.get('author_name') || '').trim();
+  const authorRole = String(formData.get('author_role') || '').trim();
+  const authorPhone = String(formData.get('author_phone') || '').trim();
+  const authorDeviceId = String(formData.get('author_device_id') || '').trim();
 
-  if (!venueId || !message) {
-    throw new Error('Нужно выбрать объект и написать сообщение');
+  if (!venueId || !message || !authorName) {
+    throw new Error('Нужно выбрать объект, представиться и написать сообщение');
   }
+
+  const authorTitle = [authorName, authorRole].filter(Boolean).join(' · ');
 
   const description = [
     objectName ? `Объект: ${objectName}` : null,
+    authorTitle ? `Автор: ${authorTitle}` : null,
+    authorPhone ? `Телефон автора: ${authorPhone}` : null,
+    authorDeviceId ? `Устройство: ${authorDeviceId}` : null,
     categoryTitle ? `Категория: ${categoryTitle}` : null,
     answer ? `Уточнение: ${answer}` : null,
     '',
@@ -47,7 +56,7 @@ export async function createTicketFromWizardAction(formData: FormData) {
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
       ticket_id: ticket.id,
-      author_name: 'Клиент',
+      author_name: authorTitle || authorName,
       body: message,
       is_internal: false,
     }),
