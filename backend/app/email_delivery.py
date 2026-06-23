@@ -26,8 +26,11 @@ def send_email_code(email: str, code: str) -> None:
     message["Subject"] = subject
     message.set_content(body)
 
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=20) as smtp:
-        if settings.smtp_starttls:
+    smtp_ssl = getattr(settings, "smtp_ssl", False) or int(settings.smtp_port) == 465
+    smtp_cls = smtplib.SMTP_SSL if smtp_ssl else smtplib.SMTP
+
+    with smtp_cls(settings.smtp_host, settings.smtp_port, timeout=20) as smtp:
+        if settings.smtp_starttls and not smtp_ssl:
             smtp.starttls()
         if settings.smtp_username and settings.smtp_password:
             smtp.login(settings.smtp_username, settings.smtp_password)
