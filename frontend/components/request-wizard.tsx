@@ -6,6 +6,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { categoryQuestions, demoClientObjects } from '@/lib/client-demo';
 import { ticketCategories, type TicketCategoryKey } from '@/lib/ticket-categories';
 import { createTicketFromWizardAction } from '@/app/client/help/wizard/actions';
+import { requestEmailCode, verifyEmailCode as verifyEmailCodeApi } from '@/app/client/help/wizard/email-auth';
 
 type Step = 'object' | 'identity' | 'email' | 'category' | 'questions' | 'chat';
 
@@ -39,7 +40,6 @@ const defaultDraft: Draft = {
 
 const storageKey = 'kord-support-client-request-draft-v3';
 const identityStorageKey = 'kord-support-employee-identity-v2';
-const demoEmailCode = '2026';
 
 const steps: Array<{ key: Step; title: string }> = [
   { key: 'object', title: 'Объект' },
@@ -62,6 +62,8 @@ function isValidEmail(email: string) {
 export function RequestWizard() {
   const [draft, setDraft] = useState<Draft>(defaultDraft);
   const [loaded, setLoaded] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'checking' | 'error'>('idle');
+  const [emailError, setEmailError] = useState('');
 
   useEffect(() => {
     const raw = window.localStorage.getItem(storageKey);
@@ -128,9 +130,30 @@ export function RequestWizard() {
     setDraft({ ...draft, employeeName: '', employeeRole: '', employeePhone: '', employeeEmail: '', emailCode: '', emailVerified: false, step: 'identity' });
   }
 
-  function verifyEmailCode() {
-    if (draft.emailCode.trim() === demoEmailCode) {
-      setDraft({ ...draft, emailVerified: true, step: 'category' });
+  async function sendEmailCode() {
+    if (!isValidEmail(draft.employeeEmail)) return;
+    setEmailStatus('sending');
+    setEmailError('');
+    try {
+      await requestEmailCode(draft.employeeEmail.trim().toLowerCase());
+      setEmailStatus('sent');
+    } catch {
+      setEmailStatus('error');
+      setEmailError('Не удалось отправить код. Проверьте email или попробуйте позже.');
+    }
+  }
+
+  async function verifyEmailCode() {
+    if (!isValidEmail(draft.employeeEmail) || !draft.emailCode.trim()) return;
+    setEmailStatus('checking');
+    setEmailError('');
+    try {
+      await verifyEmailCodeApi(draft.employeeEmail.trim().toLowerCase(), draft.emailCode.trim());
+      setDraft({ ...draft, employeeEmail: draft.employeeEmail.trim().toLowerCase(), emailVerified: true, step: 'category' });
+      setEmailStatus('idle');
+    } catch {
+      setEmailStatus('error');
+      setEmailError('Код не подошел или устарел. Запросите новый код.');
     }
   }
 
@@ -203,20 +226,27 @@ export function RequestWizard() {
           <button type="button" onClick={() => setDraft({ ...draft, step: 'identity' })} className="text-sm text-slate-500 hover:text-slate-900">← Назад</button>
           <p className="mt-4 text-sm text-slate-500">Шаг 3 из 6 · {selectedObject?.name} · {employeeTitle}</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Подтвердите email</h1>
-          <p className="mt-2 text-slate-600">Email привяжет обращение к конкретному человеку. В MVP используем тестовый код <b>{demoEmailCode}</b>, позже подключим реальную отправку письма.</p>
+          <p className="mt-2 text-slate-600">Email привяжет обращение к конкретному человеку. Код действует 10 минут.</p>
 
           <div className="mt-5 grid gap-4">
             <label className="grid gap-2">
               <span className="text-sm font-medium">Email *</span>
               <input value={draft.employeeEmail} onChange={(event) => setDraft({ ...draft, employeeEmail: event.target.value.toLowerCase(), emailVerified: false })} className="rounded-2xl border px-4 py-3" placeholder="name@example.ru" inputMode="email" />
             </label>
+            <button type="button" disabled={!isValidEmail(draft.employeeEmail) || emailStatus === 'sending'} onClick={sendEmailCode} className="rounded-2xl border px-5 py-3 font-semibold text-slate-700 disabled:bg-slate-100 disabled:text-slate-400">
+              {emailStatus === 'sending' ? 'Отправляем...' : emailStatus === 'sent' ? 'Отправить код еще раз' : 'Получить код на email'}
+            </button>
+            {emailStatus === 'sent' ? <div className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800">Код отправлен на {draft.employeeEmail}</div> : null}
+            {emailError ? <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{emailError}</div> : null}
             <label className="grid gap-2">
               <span className="text-sm font-medium">Код из письма *</span>
-              <input value={draft.emailCode} onChange={(event) => setDraft({ ...draft, emailCode: event.target.value })} className="rounded-2xl border px-4 py-3" placeholder="Для теста: 2026" inputMode="numeric" />
+              <input value={draft.emailCode} onChange={(event) => setDraft({ ...draft, emailCode: event.target.value })} className="rounded-2xl border px-4 py-3" placeholder="6 цифр" inputMode="numeric" />
             </label>
           </div>
 
-          <button type="button" disabled={!isValidEmail(draft.employeeEmail) || draft.emailCode.trim() !== demoEmailCode} onClick={verifyEmailCode} className="mt-6 rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white disabled:bg-slate-300">Подтвердить и продолжить</button>
+          <button type="button" disabled={!isValidEmail(draft.employeeEmail) || !draft.emailCode.trim() || emailStatus === 'checking'} onClick={verifyEmailCode} className="mt-6 rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white disabled:bg-slate-300">
+            {emailStatus === 'checking' ? 'Проверяем...' : 'Подтвердить и продолжить'}
+          </button>
         </section>
       ) : null}
 
