@@ -11,9 +11,28 @@ router = APIRouter(prefix="/pyrus", tags=["pyrus"])
 FORM_ID = 1485474
 
 
+def _extract_line(description: str, label: str) -> str | None:
+    prefix = f"{label}:"
+    for line in description.splitlines():
+        if line.startswith(prefix):
+            return line.replace(prefix, "", 1).strip()
+    return None
+
+
 def _ticket_summary(ticket: Ticket, venue: Venue | None) -> str:
     venue_text = f"Объект: {venue.name}" if venue else f"Объект ID: {ticket.venue_id}"
     return f"Kord Support · Заявка №{ticket.id}\n\n{venue_text}\nТема: {ticket.title}\nСтатус: {ticket.status}\nПриоритет: {ticket.priority}\n\n{ticket.description}"
+
+
+def _pyrus_priority(priority: object) -> str:
+    value = getattr(priority, "value", str(priority))
+    mapping = {
+        "low": "Незначительный",
+        "normal": "Важный",
+        "high": "Критический",
+        "critical": "Блокирующий",
+    }
+    return mapping.get(value, "Важный")
 
 
 @router.get("/health")
@@ -50,8 +69,19 @@ async def sync_ticket_to_pyrus(ticket_id: int, db: Session = Depends(get_db)):
     try:
         if not ticket.pyrus_task_id:
             summary = _ticket_summary(ticket, venue)
-            subject = summary.splitlines()[0][:250]
-            task_id = await client.create_form_task(form_id=form_id, subject=subject, description=summary)
+            subject = f"{venue.name if venue else 'Объект'}: {ticket.title}"[:250]
+            task_id = await client.create_form_task(
+                form_id=form_id,
+                subject=subject,
+                description=summary,
+                client_name=venue.name if venue else None,
+                request_type="Инцидент",
+                appeal_type=_extract_line(ticket.description, "Категория") or "Другое",
+                priority=_pyrus_priority(ticket.priority),
+                sender_name=_extract_line(ticket.description, "Автор"),
+                sender_email=_extract_line(ticket.description, "Email автора"),
+                sender_phone=_extract_line(ticket.description, "Телефон автора"),
+            )
             ticket.pyrus_task_id = str(task_id)
             db.commit()
             db.refresh(ticket)
