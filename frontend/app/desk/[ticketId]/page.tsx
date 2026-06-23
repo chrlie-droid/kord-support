@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { Shell } from '@/components/shell';
 import { getTicket, getTicketComments, getVenue } from '@/lib/api';
+import { sendOperatorMessageAction } from './actions';
 
 type PageProps = {
   params: Promise<{ ticketId: string }>;
@@ -26,6 +27,7 @@ export default async function OperatorTicketPage({ params }: PageProps) {
 
   const ticket = await getTicket(id);
   const [comments, venue] = await Promise.all([getTicketComments(id), getVenue(ticket.venue_id)]);
+  const sendMessage = sendOperatorMessageAction.bind(null, id);
 
   return (
     <Shell>
@@ -62,28 +64,31 @@ export default async function OperatorTicketPage({ params }: PageProps) {
         <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
           <div className="border-b p-5">
             <h2 className="font-semibold">Чат с клиентом</h2>
-            <p className="mt-1 text-sm text-slate-500">Оператор видит первое сообщение клиента и контекст обращения.</p>
+            <p className="mt-1 text-sm text-slate-500">Двусторонняя переписка сохраняется в базе и видна клиенту.</p>
           </div>
 
           <div className="min-h-96 space-y-3 p-5">
             {comments.length === 0 ? (
               <p className="text-sm text-slate-500">Сообщений пока нет.</p>
             ) : (
-              comments.map((comment) => (
-                <div key={comment.id} className="max-w-2xl rounded-2xl bg-slate-100 p-4 text-sm text-slate-700">
-                  <div className="mb-1 text-xs font-semibold text-slate-500">{comment.author_name}</div>
-                  <div className="whitespace-pre-line">{comment.body}</div>
-                </div>
-              ))
+              comments.map((comment) => {
+                const isOperator = comment.author_name === 'Оператор';
+                return (
+                  <div key={comment.id} className={`max-w-2xl rounded-2xl p-4 text-sm ${isOperator ? 'ml-auto bg-slate-950 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                    <div className={`mb-1 text-xs font-semibold ${isOperator ? 'text-slate-300' : 'text-slate-500'}`}>{comment.author_name}</div>
+                    <div className="whitespace-pre-line">{comment.body}</div>
+                  </div>
+                );
+              })
             )}
           </div>
 
-          <div className="border-t p-5">
-            <textarea className="min-h-28 w-full rounded-2xl border px-4 py-3" placeholder="Ответ оператора подключим следующим шагом..." />
+          <form action={sendMessage} className="border-t p-5">
+            <textarea name="body" className="min-h-28 w-full rounded-2xl border px-4 py-3" placeholder="Напишите ответ клиенту..." required />
             <div className="mt-3 flex justify-end">
-              <button className="rounded-2xl bg-slate-300 px-5 py-3 font-semibold text-slate-600" type="button">Отправка скоро</button>
+              <button className="rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white" type="submit">Отправить клиенту</button>
             </div>
-          </div>
+          </form>
         </section>
       </div>
     </Shell>
