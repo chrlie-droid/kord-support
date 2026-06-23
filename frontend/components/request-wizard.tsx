@@ -5,6 +5,7 @@ import { CheckCircle2 } from 'lucide-react';
 
 import { categoryQuestions, demoClientObjects } from '@/lib/client-demo';
 import { ticketCategories, type TicketCategoryKey } from '@/lib/ticket-categories';
+import { createTicketFromWizardAction } from '@/app/client/help/wizard/actions';
 
 type Step = 'object' | 'category' | 'questions' | 'chat';
 
@@ -56,6 +57,7 @@ export function RequestWizard() {
   const selectedCategory = useMemo(() => ticketCategories.find((item) => item.key === draft.category), [draft.category]);
   const questions = draft.category ? categoryQuestions[draft.category] || [] : [];
   const activeIndex = steps.findIndex((item) => item.key === draft.step);
+  const answerText = Object.entries(draft.answers).map(([, value]) => value).join(', ');
 
   function resetDraft() {
     window.localStorage.removeItem(storageKey);
@@ -160,13 +162,17 @@ export function RequestWizard() {
               <div className="space-y-3 p-4">
                 <div className="max-w-lg rounded-2xl bg-slate-100 p-3 text-sm text-slate-700">Здравствуйте! Мы уже собрали контекст. Опишите, что происходит, и приложите фото, если нужно.</div>
               </div>
-              <div className="border-t p-4">
-                <textarea value={draft.message} onChange={(event) => setDraft({ ...draft, message: event.target.value })} className="min-h-28 w-full rounded-2xl border px-4 py-3" placeholder="Напишите сообщение инженеру..." />
+              <form action={createTicketFromWizardAction} className="border-t p-4">
+                <input type="hidden" name="venue_id" value={selectedObject?.venueId || 1} />
+                <input type="hidden" name="object_name" value={selectedObject?.name || ''} />
+                <input type="hidden" name="category_title" value={selectedCategory?.title || 'Обращение'} />
+                <input type="hidden" name="answer" value={answerText} />
+                <textarea name="message" value={draft.message} onChange={(event) => setDraft({ ...draft, message: event.target.value })} className="min-h-28 w-full rounded-2xl border px-4 py-3" placeholder="Напишите сообщение инженеру..." required />
                 <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <button className="rounded-2xl border px-4 py-2 text-sm text-slate-600" type="button">Прикрепить фото</button>
-                  <button className="rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white" type="button">Отправить и создать обращение</button>
+                  <button className="rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white" type="submit">Отправить и создать обращение</button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         </section>
