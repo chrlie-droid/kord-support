@@ -48,6 +48,7 @@ export type Ticket = {
   description: string;
   status: string;
   priority: string;
+  pyrus_task_id?: string | null;
 };
 
 export type TicketComment = {
