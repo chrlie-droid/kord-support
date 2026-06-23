@@ -15,6 +15,25 @@ def _ticket_summary(ticket: Ticket, venue: Venue | None) -> str:
     return f"Kord Support · Заявка №{ticket.id}\n\n{venue_text}\nТема: {ticket.title}\nСтатус: {ticket.status}\nПриоритет: {ticket.priority}\n\n{ticket.description}"
 
 
+@router.get("/health")
+async def pyrus_health():
+    settings = get_settings()
+    client = PyrusClient(settings)
+    try:
+        auth = await client.auth(force=True)
+    except PyrusNotConfigured as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Pyrus authorization failed: {exc}") from exc
+
+    return {
+        "enabled": True,
+        "api_url": auth.api_url,
+        "files_url": auth.files_url,
+        "token_received": True,
+    }
+
+
 @router.post("/tickets/{ticket_id}/sync")
 async def sync_ticket_to_pyrus(ticket_id: int, db: Session = Depends(get_db)):
     ticket = db.get(Ticket, ticket_id)
