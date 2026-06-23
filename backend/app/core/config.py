@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     smtp_password: str | None = None
     smtp_from: str | None = None
     smtp_starttls: bool = True
+    smtp_ssl: bool = False
 
     telegram_enabled: bool = False
     telegram_bot_token: str | None = None
