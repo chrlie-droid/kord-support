@@ -26,3 +26,23 @@ export async function sendClientMessageAction(ticketId: number, formData: FormDa
   revalidatePath(`/client/requests/${ticketId}`);
   revalidatePath(`/desk/${ticketId}`);
 }
+
+export async function uploadClientAttachmentAction(ticketId: number, formData: FormData) {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) return;
+
+  const uploadData = new FormData();
+  uploadData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/attachments?author_name=${encodeURIComponent('Клиент')}`, {
+    method: 'POST',
+    body: uploadData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Не удалось загрузить файл');
+  }
+
+  revalidatePath(`/client/requests/${ticketId}`);
+  revalidatePath(`/desk/${ticketId}`);
+}
