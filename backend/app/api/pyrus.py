@@ -8,6 +8,7 @@ from backend.app.integrations.pyrus import PyrusClient, PyrusNotConfigured
 from backend.app.models import Ticket, TicketComment, Venue
 
 router = APIRouter(prefix="/pyrus", tags=["pyrus"])
+FORM_ID = 1485474
 
 
 def _ticket_summary(ticket: Ticket, venue: Venue | None) -> str:
@@ -31,6 +32,7 @@ async def pyrus_health():
         "api_url": auth.api_url,
         "files_url": auth.files_url,
         "token_received": True,
+        "form_id": settings.pyrus_form_id or FORM_ID,
     }
 
 
@@ -43,10 +45,13 @@ async def sync_ticket_to_pyrus(ticket_id: int, db: Session = Depends(get_db)):
     venue = db.get(Venue, ticket.venue_id)
     settings = get_settings()
     client = PyrusClient(settings)
+    form_id = int(settings.pyrus_form_id or FORM_ID)
 
     try:
         if not ticket.pyrus_task_id:
-            task_id = await client.create_task(_ticket_summary(ticket, venue))
+            summary = _ticket_summary(ticket, venue)
+            subject = summary.splitlines()[0][:250]
+            task_id = await client.create_form_task(form_id=form_id, subject=subject, description=summary)
             ticket.pyrus_task_id = str(task_id)
             db.commit()
             db.refresh(ticket)
@@ -61,4 +66,4 @@ async def sync_ticket_to_pyrus(ticket_id: int, db: Session = Depends(get_db)):
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Pyrus sync failed: {exc}") from exc
 
-    return {"ticket_id": ticket.id, "pyrus_task_id": ticket.pyrus_task_id, "status": "synced"}
+    return {"ticket_id": ticket.id, "pyrus_task_id": ticket.pyrus_task_id, "pyrus_form_id": form_id, "status": "synced"}
