@@ -1,29 +1,16 @@
 import Link from 'next/link';
 
 import { ClientShell } from '@/components/client-shell';
-import { ticketCategories } from '@/lib/ticket-categories';
 
 export default function ClientHelpPage() {
   return (
     <ClientShell>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Что произошло?</h1>
-        <p className="mt-2 text-slate-600">Выберите похожую категорию. Срочность выбирать не нужно — ее определит поддержка.</p>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {ticketCategories.map((category) => (
-          <Link key={category.key} href={`/client/help/${category.key}`} className="rounded-3xl border bg-white p-5 shadow-sm transition hover:shadow-md">
-            <div className="font-semibold">{category.title}</div>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{category.description}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {category.examples.slice(0, 3).map((example) => (
-                <span key={example} className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500">{example}</span>
-              ))}
-            </div>
-          </Link>
-        ))}
-      </div>
+      <section className="rounded-3xl border bg-white p-6 shadow-sm md:p-8">
+        <p className="text-sm text-slate-500">Шаг 1 из 4</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight">Сначала выберите объект</h1>
+        <p className="mt-3 max-w-2xl text-slate-600">Так инженеру не придется уточнять, где возникла проблема. После объекта выберем категорию, зададим пару вопросов и откроем чат.</p>
+        <Link href="/client/help/object" className="mt-6 inline-flex rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white">Выбрать объект</Link>
+      </section>
     </ClientShell>
   );
 }
