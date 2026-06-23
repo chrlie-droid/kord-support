@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { AutoRefresh } from '@/components/auto-refresh';
 import { ChatMessage } from '@/components/chat-message';
 import { ClientShell } from '@/components/client-shell';
 import { getTicket, getTicketComments } from '@/lib/api';
@@ -24,6 +25,7 @@ export default async function ClientTicketPage({ params }: PageProps) {
 
   return (
     <ClientShell>
+      <AutoRefresh intervalMs={4000} />
       <Link href="/client/requests" className="text-sm text-slate-500 hover:text-slate-900">← Мои обращения</Link>
       <section className="mt-4 overflow-hidden rounded-3xl border bg-white shadow-sm">
         <div className="border-b bg-slate-950 p-5 text-white">
@@ -46,7 +48,7 @@ export default async function ClientTicketPage({ params }: PageProps) {
           <div className="rounded-2xl border">
             <div className="border-b p-4">
               <div className="font-semibold">Чат с поддержкой</div>
-              <div className="text-xs text-slate-500">сообщения и фото сохраняются в базе и видны оператору</div>
+              <div className="text-xs text-slate-500">автообновление каждые 4 секунды</div>
             </div>
             <div className="space-y-3 p-4">
               {comments.length === 0 ? <div className="text-sm text-slate-500">Сообщений пока нет.</div> : comments.map((comment) => <ChatMessage key={comment.id} authorName={comment.author_name} body={comment.body} />)}
