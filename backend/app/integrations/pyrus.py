@@ -68,5 +68,43 @@ class PyrusClient:
         result = await self._request("POST", "/tasks", json=payload)
         return int(result["task"]["id"])
 
+    async def create_form_task(
+        self,
+        *,
+        form_id: int,
+        subject: str,
+        description: str,
+        sender_name: str | None = None,
+        sender_email: str | None = None,
+        sender_phone: str | None = None,
+    ) -> int:
+        # Current Pyrus form mapping from template screenshots:
+        # Subject = field 3, Description = field 4.
+        # SenderName / Sender Address / u_PhoneNumber can be enabled later after field ids are confirmed.
+        fields: list[dict[str, object]] = [
+            {"id": 3, "value": subject},
+            {"id": 4, "value": description},
+        ]
+
+        payload: dict[str, object] = {
+            "form_id": form_id,
+            "text": subject,
+            "fields": fields,
+        }
+
+        # Keep identity in text as well until all Pyrus field ids are known.
+        identity_lines = []
+        if sender_name:
+            identity_lines.append(f"Автор: {sender_name}")
+        if sender_email:
+            identity_lines.append(f"Email: {sender_email}")
+        if sender_phone:
+            identity_lines.append(f"Телефон: {sender_phone}")
+        if identity_lines:
+            payload["text"] = subject + "\n\n" + "\n".join(identity_lines)
+
+        result = await self._request("POST", "/tasks", json=payload)
+        return int(result["task"]["id"])
+
     async def add_comment(self, task_id: int, text: str) -> None:
         await self._request("POST", f"/tasks/{task_id}/comments", json={"text": text})
