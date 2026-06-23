@@ -1,12 +1,14 @@
 export const demoClientObjects = [
   {
     id: 'demo-venue-1',
+    venueId: 1,
     name: 'Тестовое заведение',
     address: 'Адрес будет подставляться из CRM',
     status: 'active',
   },
   {
     id: 'demo-venue-2',
+    venueId: 1,
     name: 'Второй объект',
     address: 'Демо-объект для проверки сценария',
     status: 'active',
@@ -32,7 +34,6 @@ export const categoryQuestions: Record<string, Array<{ id: string; title: string
   egais: [
     { id: 'egais_part', title: 'Что связано с ЕГАИС?', options: ['УТМ', 'Накладные', 'Марки', 'Остатки', 'Не знаю'] },
   ],
-  chestny_znaк: [],
   chestny_znak: [
     { id: 'cz_product', title: 'С чем проблема?', options: ['Вода', 'Пиво', 'Молоко', 'Марка не проходит', 'Не знаю'] },
   ],
