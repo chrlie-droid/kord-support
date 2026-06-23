@@ -42,6 +42,7 @@ export default async function OperatorTicketPage({ params }: PageProps) {
   const uploadAttachment = uploadOperatorAttachmentAction.bind(null, id);
   const syncPyrus = syncTicketToPyrusAction.bind(null, id);
   const author = extractLine(ticket.description, 'Автор');
+  const authorEmail = extractLine(ticket.description, 'Email автора');
   const authorPhone = extractLine(ticket.description, 'Телефон автора');
   const device = extractLine(ticket.description, 'Устройство');
 
@@ -65,6 +66,7 @@ export default async function OperatorTicketPage({ params }: PageProps) {
             <h2 className="font-semibold">Кто оставил обращение</h2>
             <dl className="mt-4 space-y-3 text-sm">
               <div><dt className="text-slate-500">Автор</dt><dd className="font-medium">{author || 'не указан'}</dd></div>
+              <div><dt className="text-slate-500">Email</dt><dd className="font-medium">{authorEmail || 'не указан'}</dd></div>
               <div><dt className="text-slate-500">Телефон</dt><dd className="font-medium">{authorPhone || 'не указан'}</dd></div>
               <div><dt className="text-slate-500">Устройство</dt><dd className="break-all font-medium">{device || 'не указано'}</dd></div>
             </dl>
