@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { AutoRefresh } from '@/components/auto-refresh';
 import { ChatMessage } from '@/components/chat-message';
 import { Shell } from '@/components/shell';
 import { getTicket, getTicketComments, getVenue } from '@/lib/api';
@@ -33,6 +34,7 @@ export default async function OperatorTicketPage({ params }: PageProps) {
 
   return (
     <Shell>
+      <AutoRefresh intervalMs={4000} />
       <Link href="/desk" className="text-sm text-slate-500 hover:text-slate-900">← Назад в Service Desk</Link>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[360px_1fr]">
@@ -66,7 +68,7 @@ export default async function OperatorTicketPage({ params }: PageProps) {
         <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
           <div className="border-b p-5">
             <h2 className="font-semibold">Чат с клиентом</h2>
-            <p className="mt-1 text-sm text-slate-500">Двусторонняя переписка и файлы сохраняются в базе и видны клиенту.</p>
+            <p className="mt-1 text-sm text-slate-500">автообновление каждые 4 секунды</p>
           </div>
 
           <div className="min-h-96 space-y-3 p-5">
