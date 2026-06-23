@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ChatMessage } from '@/components/chat-message';
 import { Shell } from '@/components/shell';
 import { getTicket, getTicketComments, getVenue } from '@/lib/api';
-import { sendOperatorMessageAction } from './actions';
+import { sendOperatorMessageAction, uploadOperatorAttachmentAction } from './actions';
 
 type PageProps = {
   params: Promise<{ ticketId: string }>;
@@ -28,6 +29,7 @@ export default async function OperatorTicketPage({ params }: PageProps) {
   const ticket = await getTicket(id);
   const [comments, venue] = await Promise.all([getTicketComments(id), getVenue(ticket.venue_id)]);
   const sendMessage = sendOperatorMessageAction.bind(null, id);
+  const uploadAttachment = uploadOperatorAttachmentAction.bind(null, id);
 
   return (
     <Shell>
@@ -64,31 +66,25 @@ export default async function OperatorTicketPage({ params }: PageProps) {
         <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
           <div className="border-b p-5">
             <h2 className="font-semibold">Чат с клиентом</h2>
-            <p className="mt-1 text-sm text-slate-500">Двусторонняя переписка сохраняется в базе и видна клиенту.</p>
+            <p className="mt-1 text-sm text-slate-500">Двусторонняя переписка и файлы сохраняются в базе и видны клиенту.</p>
           </div>
 
           <div className="min-h-96 space-y-3 p-5">
-            {comments.length === 0 ? (
-              <p className="text-sm text-slate-500">Сообщений пока нет.</p>
-            ) : (
-              comments.map((comment) => {
-                const isOperator = comment.author_name === 'Оператор';
-                return (
-                  <div key={comment.id} className={`max-w-2xl rounded-2xl p-4 text-sm ${isOperator ? 'ml-auto bg-slate-950 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                    <div className={`mb-1 text-xs font-semibold ${isOperator ? 'text-slate-300' : 'text-slate-500'}`}>{comment.author_name}</div>
-                    <div className="whitespace-pre-line">{comment.body}</div>
-                  </div>
-                );
-              })
-            )}
+            {comments.length === 0 ? <p className="text-sm text-slate-500">Сообщений пока нет.</p> : comments.map((comment) => <ChatMessage key={comment.id} authorName={comment.author_name} body={comment.body} />)}
           </div>
 
-          <form action={sendMessage} className="border-t p-5">
-            <textarea name="body" className="min-h-28 w-full rounded-2xl border px-4 py-3" placeholder="Напишите ответ клиенту..." required />
-            <div className="mt-3 flex justify-end">
-              <button className="rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white" type="submit">Отправить клиенту</button>
-            </div>
-          </form>
+          <div className="border-t p-5">
+            <form action={uploadAttachment} className="mb-3 flex flex-col gap-2 rounded-2xl bg-slate-50 p-3 md:flex-row md:items-center">
+              <input name="file" type="file" accept="image/*,.pdf" className="text-sm" required />
+              <button className="rounded-xl border bg-white px-4 py-2 text-sm text-slate-700" type="submit">Загрузить фото/файл</button>
+            </form>
+            <form action={sendMessage}>
+              <textarea name="body" className="min-h-28 w-full rounded-2xl border px-4 py-3" placeholder="Напишите ответ клиенту..." required />
+              <div className="mt-3 flex justify-end">
+                <button className="rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white" type="submit">Отправить клиенту</button>
+              </div>
+            </form>
+          </div>
         </section>
       </div>
     </Shell>
