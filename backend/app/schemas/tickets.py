@@ -25,6 +25,7 @@ class TicketRead(BaseModel):
     description: str
     status: TicketStatus
     priority: TicketPriority
+    pyrus_task_id: str | None = None
     model_config = ConfigDict(from_attributes=True)
 
 
