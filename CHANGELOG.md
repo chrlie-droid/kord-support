@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1
+
+- Added full client request wizard prototype.
+- Added object selection step.
+- Added category selection after object.
+- Added category-specific questions step.
+- Added final chat preview step with collected context.
+
 ## 0.5.0
 
 - Repositioned Kord Support around the client portal first.
