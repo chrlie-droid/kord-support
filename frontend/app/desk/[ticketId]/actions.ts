@@ -26,3 +26,23 @@ export async function sendOperatorMessageAction(ticketId: number, formData: Form
   revalidatePath(`/desk/${ticketId}`);
   revalidatePath(`/client/requests/${ticketId}`);
 }
+
+export async function uploadOperatorAttachmentAction(ticketId: number, formData: FormData) {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) return;
+
+  const uploadData = new FormData();
+  uploadData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/attachments?author_name=${encodeURIComponent('Оператор')}`, {
+    method: 'POST',
+    body: uploadData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Не удалось загрузить файл');
+  }
+
+  revalidatePath(`/desk/${ticketId}`);
+  revalidatePath(`/client/requests/${ticketId}`);
+}
