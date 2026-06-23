@@ -13,10 +13,12 @@ export async function createTicketFromWizardAction(formData: FormData) {
   const authorName = String(formData.get('author_name') || '').trim();
   const authorRole = String(formData.get('author_role') || '').trim();
   const authorPhone = String(formData.get('author_phone') || '').trim();
+  const authorEmail = String(formData.get('author_email') || '').trim().toLowerCase();
+  const authorEmailVerified = String(formData.get('author_email_verified') || '') === 'true';
   const authorDeviceId = String(formData.get('author_device_id') || '').trim();
 
-  if (!venueId || !message || !authorName) {
-    throw new Error('Нужно выбрать объект, представиться и написать сообщение');
+  if (!venueId || !message || !authorName || !authorEmail || !authorEmailVerified) {
+    throw new Error('Нужно выбрать объект, представиться, подтвердить email и написать сообщение');
   }
 
   const authorTitle = [authorName, authorRole].filter(Boolean).join(' · ');
@@ -24,6 +26,7 @@ export async function createTicketFromWizardAction(formData: FormData) {
   const description = [
     objectName ? `Объект: ${objectName}` : null,
     authorTitle ? `Автор: ${authorTitle}` : null,
+    authorEmail ? `Email автора: ${authorEmail} (подтвержден)` : null,
     authorPhone ? `Телефон автора: ${authorPhone}` : null,
     authorDeviceId ? `Устройство: ${authorDeviceId}` : null,
     categoryTitle ? `Категория: ${categoryTitle}` : null,
