@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { AutoRefresh } from '@/components/auto-refresh';
+import { ChatAutoRefresh } from '@/components/chat-auto-refresh';
 import { ChatMessage } from '@/components/chat-message';
 import { Shell } from '@/components/shell';
 import { getTicket, getTicketComments, getVenue } from '@/lib/api';
@@ -34,7 +34,7 @@ export default async function OperatorTicketPage({ params }: PageProps) {
 
   return (
     <Shell>
-      <AutoRefresh intervalMs={4000} />
+      <ChatAutoRefresh intervalMs={4000} />
       <Link href="/desk" className="text-sm text-slate-500 hover:text-slate-900">← Назад в Service Desk</Link>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[360px_1fr]">
