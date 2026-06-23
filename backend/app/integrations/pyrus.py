@@ -64,9 +64,13 @@ class PyrusClient:
             return response.json()
 
     async def create_task(self, text: str) -> int:
-        payload: dict[str, object] = {"text": text}
-        result = await self._request("POST", "/tasks", json=payload)
-        return int(result["task"]["id"])
+        form_id = int(self.settings.pyrus_form_id or 1485474)
+        subject = text.splitlines()[0][:250] if text else "Kord Support"
+        return await self.create_form_task(
+            form_id=form_id,
+            subject=subject,
+            description=text,
+        )
 
     async def create_form_task(
         self,
@@ -74,34 +78,41 @@ class PyrusClient:
         form_id: int,
         subject: str,
         description: str,
+        client_name: str | None = None,
+        request_type: str | None = None,
+        appeal_type: str | None = None,
+        priority: str | None = None,
         sender_name: str | None = None,
         sender_email: str | None = None,
         sender_phone: str | None = None,
+        created_date: str | None = None,
+        due_date: str | None = None,
     ) -> int:
-        # Current Pyrus form mapping from template screenshots:
-        # Subject = field 3, Description = field 4.
-        # SenderName / Sender Address / u_PhoneNumber can be enabled later after field ids are confirmed.
         fields: list[dict[str, object]] = [
             {"id": 3, "value": subject},
             {"id": 4, "value": description},
         ]
+
+        optional_fields: list[tuple[int, str | None]] = [
+            (30, client_name),
+            (11, request_type),
+            (23, appeal_type),
+            (20, priority),
+            (6, sender_name),
+            (7, sender_email),
+            (10, sender_phone),
+            (28, created_date),
+            (17, due_date),
+        ]
+        for field_id, value in optional_fields:
+            if value:
+                fields.append({"id": field_id, "value": value})
 
         payload: dict[str, object] = {
             "form_id": form_id,
             "text": subject,
             "fields": fields,
         }
-
-        # Keep identity in text as well until all Pyrus field ids are known.
-        identity_lines = []
-        if sender_name:
-            identity_lines.append(f"Автор: {sender_name}")
-        if sender_email:
-            identity_lines.append(f"Email: {sender_email}")
-        if sender_phone:
-            identity_lines.append(f"Телефон: {sender_phone}")
-        if identity_lines:
-            payload["text"] = subject + "\n\n" + "\n".join(identity_lines)
 
         result = await self._request("POST", "/tasks", json=payload)
         return int(result["task"]["id"])
