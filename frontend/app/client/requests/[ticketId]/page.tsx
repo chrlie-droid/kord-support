@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { ClientShell } from '@/components/client-shell';
 import { getTicket, getTicketComments } from '@/lib/api';
+import { sendClientMessageAction } from './actions';
 
 type PageProps = {
   params: Promise<{ ticketId: string }>;
@@ -17,6 +18,7 @@ export default async function ClientTicketPage({ params }: PageProps) {
   }
 
   const [ticket, comments] = await Promise.all([getTicket(id), getTicketComments(id)]);
+  const sendMessage = sendClientMessageAction.bind(null, id);
 
   return (
     <ClientShell>
@@ -42,24 +44,27 @@ export default async function ClientTicketPage({ params }: PageProps) {
           <div className="rounded-2xl border">
             <div className="border-b p-4">
               <div className="font-semibold">Чат с поддержкой</div>
-              <div className="text-xs text-slate-500">первое сообщение уже сохранено в базе</div>
+              <div className="text-xs text-slate-500">сообщения сохраняются в базе и видны оператору</div>
             </div>
             <div className="space-y-3 p-4">
               {comments.length === 0 ? (
                 <div className="text-sm text-slate-500">Сообщений пока нет.</div>
               ) : (
-                comments.map((comment) => (
-                  <div key={comment.id} className="max-w-lg rounded-2xl bg-slate-100 p-3 text-sm text-slate-700">
-                    <div className="mb-1 text-xs font-semibold text-slate-500">{comment.author_name}</div>
-                    {comment.body}
-                  </div>
-                ))
+                comments.map((comment) => {
+                  const isOperator = comment.author_name === 'Оператор';
+                  return (
+                    <div key={comment.id} className={`max-w-lg rounded-2xl p-3 text-sm ${isOperator ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                      <div className={`mb-1 text-xs font-semibold ${isOperator ? 'text-slate-300' : 'text-slate-500'}`}>{comment.author_name}</div>
+                      <div className="whitespace-pre-line">{comment.body}</div>
+                    </div>
+                  );
+                })
               )}
             </div>
-            <div className="border-t p-4">
-              <textarea className="min-h-24 w-full rounded-2xl border px-4 py-3" placeholder="Ответ в чат подключим следующим шагом..." />
-              <button className="mt-3 rounded-2xl bg-slate-300 px-5 py-3 font-semibold text-slate-600" type="button">Отправка скоро</button>
-            </div>
+            <form action={sendMessage} className="border-t p-4">
+              <textarea name="body" className="min-h-24 w-full rounded-2xl border px-4 py-3" placeholder="Напишите ответ поддержке..." required />
+              <button className="mt-3 rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white" type="submit">Отправить</button>
+            </form>
           </div>
         </div>
       </section>
