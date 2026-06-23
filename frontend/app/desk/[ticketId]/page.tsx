@@ -20,6 +20,14 @@ const statusLabels: Record<string, string> = {
   closed: 'Закрыта',
 };
 
+function extractLine(description: string, label: string) {
+  return description
+    .split('\n')
+    .find((line) => line.startsWith(`${label}:`))
+    ?.replace(`${label}:`, '')
+    .trim();
+}
+
 export default async function OperatorTicketPage({ params }: PageProps) {
   const { ticketId } = await params;
   const id = Number(ticketId);
@@ -33,6 +41,9 @@ export default async function OperatorTicketPage({ params }: PageProps) {
   const sendMessage = sendOperatorMessageAction.bind(null, id);
   const uploadAttachment = uploadOperatorAttachmentAction.bind(null, id);
   const syncPyrus = syncTicketToPyrusAction.bind(null, id);
+  const author = extractLine(ticket.description, 'Автор');
+  const authorPhone = extractLine(ticket.description, 'Телефон автора');
+  const device = extractLine(ticket.description, 'Устройство');
 
   return (
     <Shell>
@@ -48,6 +59,15 @@ export default async function OperatorTicketPage({ params }: PageProps) {
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">{statusLabels[ticket.status] || ticket.status}</span>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">{ticket.priority}</span>
             </div>
+          </section>
+
+          <section className="rounded-2xl border bg-white p-5 shadow-sm">
+            <h2 className="font-semibold">Кто оставил обращение</h2>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div><dt className="text-slate-500">Автор</dt><dd className="font-medium">{author || 'не указан'}</dd></div>
+              <div><dt className="text-slate-500">Телефон</dt><dd className="font-medium">{authorPhone || 'не указан'}</dd></div>
+              <div><dt className="text-slate-500">Устройство</dt><dd className="break-all font-medium">{device || 'не указано'}</dd></div>
+            </dl>
           </section>
 
           <section className="rounded-2xl border bg-white p-5 shadow-sm">
