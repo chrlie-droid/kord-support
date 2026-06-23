@@ -19,6 +19,14 @@ class Settings(BaseSettings):
     pyrus_form_id: str | None = None
     pyrus_webhook_secret: str | None = None
 
+    smtp_enabled: bool = False
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str | None = None
+    smtp_starttls: bool = True
+
     telegram_enabled: bool = False
     telegram_bot_token: str | None = None
 
