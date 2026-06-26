@@ -27,7 +27,7 @@ export async function saveEmailSettingsAction(formData: FormData) {
   });
 
   if (!response.ok) {
-    throw new Error('Не удалось сохранить настройки почты');
+    console.error('Email settings save failed', await response.text());
   }
 
   revalidatePath('/settings');
@@ -36,7 +36,9 @@ export async function saveEmailSettingsAction(formData: FormData) {
 export async function testEmailSettingsAction(formData: FormData) {
   const email = String(formData.get('test_email') || '').trim();
   if (!email) {
-    throw new Error('Укажите email для теста');
+    console.error('Email test skipped: empty test_email');
+    revalidatePath('/settings');
+    return;
   }
 
   const response = await fetch(`${API_BASE_URL}/admin/email-settings/test`, {
@@ -46,8 +48,7 @@ export async function testEmailSettingsAction(formData: FormData) {
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Тест отправки не прошел: ${error}`);
+    console.error('Email test failed', await response.text());
   }
 
   revalidatePath('/settings');
