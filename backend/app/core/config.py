@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     pyrus_form_id: str | None = None
     pyrus_webhook_secret: str | None = None
 
+    email_provider: str = "smtp"
+    email_from: str | None = None
+    resend_api_key: str | None = None
+
     smtp_enabled: bool = False
     smtp_host: str | None = None
     smtp_port: int = 587
