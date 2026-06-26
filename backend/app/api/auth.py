@@ -4,7 +4,7 @@ from random import SystemRandom
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
 
-from backend.app.email_delivery import send_email_code
+from backend.app.notifications import notification_center
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -31,8 +31,11 @@ def request_email_code(payload: EmailCodeRequest):
         "expires_at": datetime.now(timezone.utc) + timedelta(minutes=_CODE_TTL_MINUTES),
         "attempts": 0,
     }
-    send_email_code(email, code)
-    return {"status": "sent", "ttl_minutes": _CODE_TTL_MINUTES}
+    result = notification_center.send_email_code(email, code)
+    if result.mode != "sent":
+        import logging
+        logging.getLogger(__name__).warning("EMAIL CODE for %s: %s", email, code)
+    return {"status": "sent", "delivery": result.mode, "provider": result.provider, "ttl_minutes": _CODE_TTL_MINUTES}
 
 
 @router.post("/email/verify-code")
