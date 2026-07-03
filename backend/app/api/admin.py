@@ -4,11 +4,14 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
 
 from backend.app.core.config import get_settings
-from backend.app.email_delivery import send_email_code
+from backend.app.notifications import notification_center
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 ENV_PATH = Path("/app/.env")
-SMTP_KEYS = [
+EMAIL_KEYS = [
+    "EMAIL_PROVIDER",
+    "EMAIL_FROM",
+    "RESEND_API_KEY",
     "SMTP_ENABLED",
     "SMTP_HOST",
     "SMTP_PORT",
@@ -21,6 +24,9 @@ SMTP_KEYS = [
 
 
 class EmailSettingsUpdate(BaseModel):
+    email_provider: str = "smtp"
+    email_from: str | None = None
+    resend_api_key: str | None = None
     smtp_enabled: bool = False
     smtp_host: str | None = None
     smtp_port: int = 587
@@ -38,9 +44,9 @@ class EmailTestRequest(BaseModel):
 def _mask(value: str | None) -> str | None:
     if not value:
         return None
-    if len(value) <= 4:
+    if len(value) <= 8:
         return "****"
-    return value[:2] + "****" + value[-2:]
+    return value[:4] + "****" + value[-4:]
 
 
 def _read_env_lines() -> list[str]:
@@ -55,16 +61,16 @@ def _write_env_values(values: dict[str, str]) -> None:
     next_lines: list[str] = []
 
     for line in lines:
-      if "=" not in line or line.strip().startswith("#"):
-          next_lines.append(line)
-          continue
-      key = line.split("=", 1)[0]
-      if key in values:
-          next_lines.append(f"{key}={values[key]}")
-      else:
-          next_lines.append(line)
+        if "=" not in line or line.strip().startswith("#"):
+            next_lines.append(line)
+            continue
+        key = line.split("=", 1)[0]
+        if key in values:
+            next_lines.append(f"{key}={values[key]}")
+        else:
+            next_lines.append(line)
 
-    for key in SMTP_KEYS:
+    for key in EMAIL_KEYS:
         if key not in existing_keys and key in values:
             next_lines.append(f"{key}={values[key]}")
 
@@ -76,6 +82,10 @@ def _write_env_values(values: dict[str, str]) -> None:
 def get_email_settings():
     settings = get_settings()
     return {
+        "email_provider": settings.email_provider,
+        "email_from": settings.email_from,
+        "resend_api_key_set": bool(settings.resend_api_key),
+        "resend_api_key_masked": _mask(settings.resend_api_key),
         "smtp_enabled": settings.smtp_enabled,
         "smtp_host": settings.smtp_host,
         "smtp_port": settings.smtp_port,
@@ -91,13 +101,17 @@ def get_email_settings():
 @router.put("/email-settings")
 def update_email_settings(payload: EmailSettingsUpdate):
     current = get_settings()
-    password = payload.smtp_password if payload.smtp_password else current.smtp_password
+    resend_api_key = payload.resend_api_key if payload.resend_api_key else current.resend_api_key
+    smtp_password = payload.smtp_password if payload.smtp_password else current.smtp_password
     values = {
+        "EMAIL_PROVIDER": payload.email_provider or "smtp",
+        "EMAIL_FROM": payload.email_from or "",
+        "RESEND_API_KEY": resend_api_key or "",
         "SMTP_ENABLED": str(payload.smtp_enabled).lower(),
         "SMTP_HOST": payload.smtp_host or "",
         "SMTP_PORT": str(payload.smtp_port),
         "SMTP_USERNAME": payload.smtp_username or "",
-        "SMTP_PASSWORD": password or "",
+        "SMTP_PASSWORD": smtp_password or "",
         "SMTP_FROM": payload.smtp_from or "",
         "SMTP_STARTTLS": str(payload.smtp_starttls).lower(),
         "SMTP_SSL": str(payload.smtp_ssl).lower(),
@@ -111,8 +125,5 @@ def update_email_settings(payload: EmailSettingsUpdate):
 
 @router.post("/email-settings/test")
 def test_email_settings(payload: EmailTestRequest):
-    try:
-        send_email_code(payload.email, "123456")
-    except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"SMTP test failed: {exc}") from exc
-    return {"status": "sent", "email": payload.email}
+    result = notification_center.send_email_code(payload.email, "123456")
+    return {"status": "sent", "email": payload.email, "provider": result.provider, "delivery": result.mode, "detail": result.detail}
