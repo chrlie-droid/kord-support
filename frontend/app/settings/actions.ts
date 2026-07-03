@@ -5,8 +5,11 @@ import { revalidatePath } from 'next/cache';
 const API_BASE_URL = process.env.API_BASE_URL || 'http://app:8085/api';
 
 export async function saveEmailSettingsAction(formData: FormData) {
+  const resendApiKey = String(formData.get('resend_api_key') || '').trim();
   const smtpPassword = String(formData.get('smtp_password') || '').trim();
   const body: Record<string, unknown> = {
+    email_provider: String(formData.get('email_provider') || 'smtp').trim(),
+    email_from: String(formData.get('email_from') || '').trim(),
     smtp_enabled: formData.get('smtp_enabled') === 'on',
     smtp_host: String(formData.get('smtp_host') || '').trim(),
     smtp_port: Number(formData.get('smtp_port') || 587),
@@ -15,6 +18,10 @@ export async function saveEmailSettingsAction(formData: FormData) {
     smtp_starttls: formData.get('smtp_starttls') === 'on',
     smtp_ssl: formData.get('smtp_ssl') === 'on',
   };
+
+  if (resendApiKey) {
+    body.resend_api_key = resendApiKey;
+  }
 
   if (smtpPassword) {
     body.smtp_password = smtpPassword;
