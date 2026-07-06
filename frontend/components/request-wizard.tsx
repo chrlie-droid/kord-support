@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 import { categoryQuestions, demoClientObjects } from '@/lib/client-demo';
 import { ticketCategories, type TicketCategoryKey } from '@/lib/ticket-categories';
@@ -59,7 +60,35 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+function readSavedIdentity(): Partial<Draft> {
+  const savedIdentity = window.localStorage.getItem(identityStorageKey);
+  if (!savedIdentity) return {};
+  try {
+    return JSON.parse(savedIdentity);
+  } catch {
+    return {};
+  }
+}
+
+function makeFreshDraft(currentDeviceId?: string): Draft {
+  const identity = readSavedIdentity();
+  const deviceId = currentDeviceId || String(identity.deviceId || '') || makeDeviceId();
+  return {
+    ...defaultDraft,
+    ...identity,
+    step: 'object',
+    objectId: undefined,
+    category: undefined,
+    answers: {},
+    message: '',
+    emailCode: '',
+    deviceId,
+  };
+}
+
 export function RequestWizard() {
+  const searchParams = useSearchParams();
+  const shouldStartNew = searchParams.get('new') === '1';
   const [draft, setDraft] = useState<Draft>(defaultDraft);
   const [loaded, setLoaded] = useState(false);
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'checking' | 'error'>('idle');
@@ -67,23 +96,28 @@ export function RequestWizard() {
 
   useEffect(() => {
     const raw = window.localStorage.getItem(storageKey);
-    const savedIdentity = window.localStorage.getItem(identityStorageKey);
     let nextDraft = defaultDraft;
 
-    if (raw) {
-      try {
-        nextDraft = { ...defaultDraft, ...JSON.parse(raw) };
-      } catch {
-        nextDraft = defaultDraft;
+    if (shouldStartNew) {
+      window.localStorage.removeItem(storageKey);
+      nextDraft = makeFreshDraft();
+    } else {
+      const savedIdentity = window.localStorage.getItem(identityStorageKey);
+      if (raw) {
+        try {
+          nextDraft = { ...defaultDraft, ...JSON.parse(raw) };
+        } catch {
+          nextDraft = defaultDraft;
+        }
       }
-    }
 
-    if (savedIdentity) {
-      try {
-        const identity = JSON.parse(savedIdentity);
-        nextDraft = { ...nextDraft, ...identity, emailCode: '' };
-      } catch {
-        // ignore broken identity cache
+      if (savedIdentity) {
+        try {
+          const identity = JSON.parse(savedIdentity);
+          nextDraft = { ...nextDraft, ...identity, emailCode: '' };
+        } catch {
+          // ignore broken identity cache
+        }
       }
     }
 
@@ -93,7 +127,7 @@ export function RequestWizard() {
 
     setDraft(nextDraft);
     setLoaded(true);
-  }, []);
+  }, [shouldStartNew]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -122,7 +156,7 @@ export function RequestWizard() {
 
   function resetDraft() {
     window.localStorage.removeItem(storageKey);
-    setDraft({ ...defaultDraft, deviceId: draft.deviceId || makeDeviceId() });
+    setDraft(makeFreshDraft(draft.deviceId));
   }
 
   function resetIdentity() {
@@ -179,7 +213,7 @@ export function RequestWizard() {
           <p className="mt-2 text-slate-600">QR-код на объекте в будущем будет выбирать ресторан автоматически.</p>
           <div className="mt-6 grid gap-3 md:grid-cols-2">
             {demoClientObjects.map((object) => (
-              <button key={object.id} type="button" onClick={() => setDraft({ ...draft, objectId: object.id, step: 'identity' })} className="rounded-3xl border p-5 text-left shadow-sm transition hover:bg-slate-50">
+              <button key={object.id} type="button" onClick={() => setDraft({ ...draft, objectId: object.id, category: undefined, answers: {}, message: '', step: 'identity' })} className="rounded-3xl border p-5 text-left shadow-sm transition hover:bg-slate-50">
                 <div className="font-semibold">{object.name}</div>
                 <p className="mt-2 text-sm text-slate-600">{object.address}</p>
               </button>
@@ -258,7 +292,7 @@ export function RequestWizard() {
           <p className="mt-2 text-slate-600">Выберите похожую категорию. Срочность выбирать не нужно.</p>
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {ticketCategories.map((category) => (
-              <button key={category.key} type="button" onClick={() => setDraft({ ...draft, category: category.key, answers: {}, step: 'questions' })} className="rounded-3xl border p-5 text-left shadow-sm transition hover:bg-slate-50">
+              <button key={category.key} type="button" onClick={() => setDraft({ ...draft, category: category.key, answers: {}, message: '', step: 'questions' })} className="rounded-3xl border p-5 text-left shadow-sm transition hover:bg-slate-50">
                 <div className="font-semibold">{category.title}</div>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{category.description}</p>
               </button>
@@ -320,7 +354,7 @@ export function RequestWizard() {
               <div className="space-y-3 p-4">
                 <div className="max-w-lg rounded-2xl bg-slate-100 p-3 text-sm text-slate-700">Здравствуйте! Мы уже знаем объект и автора обращения. Опишите, что происходит, и приложите фото, если нужно.</div>
               </div>
-              <form action={createTicketFromWizardAction} className="border-t p-4">
+              <form action={createTicketFromWizardAction} onSubmit={() => window.localStorage.removeItem(storageKey)} className="border-t p-4">
                 <input type="hidden" name="venue_id" value={selectedObject?.venueId || 1} />
                 <input type="hidden" name="object_name" value={selectedObject?.name || ''} />
                 <input type="hidden" name="author_name" value={draft.employeeName} />
@@ -334,7 +368,7 @@ export function RequestWizard() {
                 <textarea name="message" value={draft.message} onChange={(event) => setDraft({ ...draft, message: event.target.value })} className="min-h-28 w-full rounded-2xl border px-4 py-3" placeholder="Напишите сообщение инженеру..." required />
                 <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <button className="rounded-2xl border px-4 py-2 text-sm text-slate-600" type="button">Прикрепить фото</button>
-                  <button className="rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white" type="submit">Написать инженеру</button>
+                  <button className="rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white" type="submit">Создать обращение</button>
                 </div>
               </form>
             </div>
@@ -342,7 +376,7 @@ export function RequestWizard() {
         </section>
       ) : null}
 
-      <button type="button" onClick={resetDraft} className="text-sm text-slate-500 hover:text-slate-900">Сбросить черновик</button>
+      <button type="button" onClick={resetDraft} className="text-sm text-slate-500 hover:text-slate-900">Начать новое обращение</button>
     </div>
   );
 }
