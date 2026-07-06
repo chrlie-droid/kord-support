@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { ClientShell } from '@/components/client-shell';
+import { NewRequestLink } from '@/components/new-request-link';
 import { getTickets } from '@/lib/api';
 
 export default async function ClientRequestsPage() {
@@ -13,13 +14,14 @@ export default async function ClientRequestsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Мои обращения</h1>
           <p className="mt-2 text-slate-600">MVP показывает созданные обращения. После авторизации здесь останутся только личные заявки аккаунта.</p>
         </div>
-        <Link href="/client/help/wizard" className="rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white">Нужна помощь</Link>
+        <NewRequestLink className="rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white">Создать новое обращение</NewRequestLink>
       </div>
 
       {tickets.length === 0 ? (
         <section className="rounded-3xl border bg-white p-6 shadow-sm">
           <h2 className="font-semibold">Обращений пока нет</h2>
           <p className="mt-2 text-sm text-slate-600">После создания обращения оно появится здесь.</p>
+          <NewRequestLink className="mt-4 inline-flex rounded-2xl bg-slate-950 px-5 py-3 font-semibold text-white">Создать первое обращение</NewRequestLink>
         </section>
       ) : (
         <div className="grid gap-3">
