@@ -4,7 +4,12 @@ import { revalidatePath } from 'next/cache';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://app:8085/api';
 
-export async function saveEmailSettingsAction(formData: FormData) {
+export type SettingsActionState = {
+  ok: boolean;
+  message: string;
+};
+
+export async function saveEmailSettingsAction(_prevState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
   const resendApiKey = String(formData.get('resend_api_key') || '').trim();
   const smtpPassword = String(formData.get('smtp_password') || '').trim();
   const body: Record<string, unknown> = {
@@ -27,36 +32,50 @@ export async function saveEmailSettingsAction(formData: FormData) {
     body.smtp_password = smtpPassword;
   }
 
-  const response = await fetch(`${API_BASE_URL}/admin/email-settings`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(body),
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/email-settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(body),
+    });
 
-  if (!response.ok) {
-    console.error('Email settings save failed', await response.text());
+    if (!response.ok) {
+      return { ok: false, message: `Настройки не сохранены: ${await response.text()}` };
+    }
+
+    const data = await response.json();
+    revalidatePath('/settings');
+    return { ok: true, message: `Настройки сохранены. Активный провайдер: ${data.email_provider || 'smtp'}.` };
+  } catch (error) {
+    return { ok: false, message: `Настройки не сохранены: ${error instanceof Error ? error.message : 'неизвестная ошибка'}` };
   }
-
-  revalidatePath('/settings');
 }
 
-export async function testEmailSettingsAction(formData: FormData) {
+export async function testEmailSettingsAction(_prevState: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
   const email = String(formData.get('test_email') || '').trim();
   if (!email) {
-    console.error('Email test skipped: empty test_email');
+    return { ok: false, message: 'Укажите email для тестовой отправки.' };
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/email-settings/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+      return { ok: false, message: `Тест не прошел: ${text}` };
+    }
+
+    const data = JSON.parse(text);
     revalidatePath('/settings');
-    return;
+    if (data.delivery === 'sent') {
+      return { ok: true, message: `Тестовое письмо отправлено через ${data.provider}. Проверьте почту ${email}.` };
+    }
+    return { ok: true, message: `Тест выполнен в режиме ${data.delivery} через ${data.provider}. Если письма нет, код записан в логи backend.` };
+  } catch (error) {
+    return { ok: false, message: `Тест не прошел: ${error instanceof Error ? error.message : 'неизвестная ошибка'}` };
   }
-
-  const response = await fetch(`${API_BASE_URL}/admin/email-settings/test`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-
-  if (!response.ok) {
-    console.error('Email test failed', await response.text());
-  }
-
-  revalidatePath('/settings');
 }
