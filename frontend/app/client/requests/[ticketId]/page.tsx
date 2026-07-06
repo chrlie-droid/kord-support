@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ChatAutoRefresh } from '@/components/chat-auto-refresh';
 import { ChatMessage } from '@/components/chat-message';
 import { ClientShell } from '@/components/client-shell';
+import { NewRequestLink } from '@/components/new-request-link';
 import { getTicket, getTicketComments } from '@/lib/api';
 import { sendClientMessageAction, uploadClientAttachmentAction } from './actions';
 
@@ -26,7 +27,10 @@ export default async function ClientTicketPage({ params }: PageProps) {
   return (
     <ClientShell>
       <ChatAutoRefresh intervalMs={4000} />
-      <Link href="/client/requests" className="text-sm text-slate-500 hover:text-slate-900">← Мои обращения</Link>
+      <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+        <Link href="/client/requests" className="text-sm text-slate-500 hover:text-slate-900">← Мои обращения</Link>
+        <NewRequestLink className="w-fit rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white">Создать еще одно обращение</NewRequestLink>
+      </div>
       <section className="mt-4 overflow-hidden rounded-3xl border bg-white shadow-sm">
         <div className="border-b bg-slate-950 p-5 text-white">
           <p className="text-sm text-slate-300">Обращение №{ticket.id}</p>
