@@ -1,0 +1,6 @@
+UTM FB2 Queue v5.5
+- search by full or partial FB2 in Web UI
+- status filter
+- live result count / not-found message
+- keeps per-row immediate Send button from v5.4
+- keeps v5.3 Ticket correlation fixes
